@@ -7,6 +7,7 @@ use App\Events\CreateVentaDetalleEvent;
 use App\Events\CreateVentaEvent;
 use App\Http\Requests\StoreVentaRequest;
 use App\Models\Cliente;
+use App\Models\Empresa;
 use App\Models\Producto;
 use App\Models\Venta;
 use App\Services\ActivityLogService;
@@ -18,6 +19,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class ventaController extends Controller
@@ -94,45 +96,115 @@ class ventaController extends Controller
     {
         DB::beginTransaction();
         try {
-            //Llenar mi tabla venta
-            $venta = Venta::create($request->validated());
+            $validated = $request->validated();
+            $arrayProducto_id = $validated['arrayidproducto'];
+            $arrayCantidad = $validated['arraycantidad'];
+            $empresa = Empresa::query()->firstOrFail();
 
-            //Llenar mi tabla venta_producto
-            //1. Recuperar los arrays
-            $arrayProducto_id = $request->get('arrayidproducto');
-            $arrayCantidad = $request->get('arraycantidad');
-            $arrayPrecioVenta = $request->get('arrayprecioventa');
+            if (count($arrayProducto_id) !== count($arrayCantidad)) {
+                throw ValidationException::withMessages([
+                    'arraycantidad' => 'El detalle de la venta es inconsistente.',
+                ]);
+            }
 
-            //2.Realizar el llenado
-            $siseArray = count($arrayProducto_id);
-            $cont = 0;
+            $productos = Producto::with('inventario')
+                ->whereIn('id', $arrayProducto_id)
+                ->get()
+                ->keyBy('id');
 
-            while ($cont < $siseArray) {
+            if ($productos->count() !== count(array_unique($arrayProducto_id))) {
+                throw ValidationException::withMessages([
+                    'arrayidproducto' => 'Uno o más productos no son válidos.',
+                ]);
+            }
+
+            $detalleVenta = [];
+            $subtotal = 0.0;
+
+            foreach ($arrayProducto_id as $index => $productoId) {
+                $producto = $productos->get((int) $productoId);
+                $cantidad = (int) $arrayCantidad[$index];
+
+                if (!$producto || !$producto->inventario) {
+                    throw ValidationException::withMessages([
+                        'arrayidproducto' => 'Uno o más productos no tienen inventario inicializado.',
+                    ]);
+                }
+
+                if ($producto->estado != 1) {
+                    throw ValidationException::withMessages([
+                        'arrayidproducto' => 'Solo puede vender productos activos.',
+                    ]);
+                }
+
+                if ($producto->inventario->cantidad < $cantidad) {
+                    throw ValidationException::withMessages([
+                        'arraycantidad' => "Stock insuficiente para {$producto->nombre}.",
+                    ]);
+                }
+
+                $precioVenta = round((float) $producto->precio, 2);
+                $subtotal += round($cantidad * $precioVenta, 2);
+                $detalleVenta[] = [
+                    'producto_id' => $producto->id,
+                    'cantidad' => $cantidad,
+                    'precio_venta' => $precioVenta,
+                ];
+            }
+
+            $subtotal = round($subtotal, 2);
+            $impuesto = round($subtotal * ((float) $empresa->porcentaje_impuesto / 100), 2);
+            $total = round($subtotal + $impuesto, 2);
+            $montoRecibido = round((float) $validated['monto_recibido'], 2);
+
+            if ($montoRecibido < $total) {
+                throw ValidationException::withMessages([
+                    'monto_recibido' => 'El monto recibido debe cubrir el total de la venta.',
+                ]);
+            }
+
+            $venta = Venta::create([
+                'cliente_id' => $validated['cliente_id'],
+                'comprobante_id' => $validated['comprobante_id'],
+                'metodo_pago' => $validated['metodo_pago'],
+                'subtotal' => $subtotal,
+                'impuesto' => $impuesto,
+                'total' => $total,
+                'monto_recibido' => $montoRecibido,
+                'vuelto_entregado' => round($montoRecibido - $total, 2),
+            ]);
+
+            foreach ($detalleVenta as $detalle) {
                 $venta->productos()->syncWithoutDetaching([
-                    $arrayProducto_id[$cont] => [
-                        'cantidad' => $arrayCantidad[$cont],
-                        'precio_venta' => $arrayPrecioVenta[$cont],
+                    $detalle['producto_id'] => [
+                        'cantidad' => $detalle['cantidad'],
+                        'precio_venta' => $detalle['precio_venta'],
                     ]
                 ]);
 
-                //Despachar evento
                 CreateVentaDetalleEvent::dispatch(
                     $venta,
-                    $arrayProducto_id[$cont],
-                    $arrayCantidad[$cont],
-                    $arrayPrecioVenta[$cont]
+                    $detalle['producto_id'],
+                    $detalle['cantidad'],
+                    $detalle['precio_venta']
                 );
-
-                $cont++;
             }
 
-            //Despachar evento
             CreateVentaEvent::dispatch($venta);
 
             DB::commit();
-            ActivityLogService::log('Creación de una venta', 'Ventas', $request->validated());
+            ActivityLogService::log('Creación de una venta', 'Ventas', [
+                'venta_id' => $venta->id,
+                'cliente_id' => $venta->cliente_id,
+                'subtotal' => $venta->subtotal,
+                'impuesto' => $venta->impuesto,
+                'total' => $venta->total,
+            ]);
             return redirect()->route('movimientos.index', ['caja_id' => $venta->caja_id])
                 ->with('success', 'Venta registrada');
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            throw $e;
         } catch (Throwable $e) {
             DB::rollBack();
             Log::error('Error al crear la venta', ['error' => $e->getMessage()]);

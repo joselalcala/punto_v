@@ -7,10 +7,16 @@ use App\Models\Venta;
 use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
 
 class ExportPDFController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     /**
      * Exportar en formato PDF el comprobante de venta
      */
@@ -19,6 +25,7 @@ class ExportPDFController extends Controller
         $id = Crypt::decrypt($request->id);
 
         $venta = Venta::findOrfail($id);
+        abort_if($venta->user_id !== Auth::id(), 403);
         $empresa = Empresa::first();
 
         $pdf = Pdf::loadView('pdf.comprobante-venta', [

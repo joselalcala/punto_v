@@ -33,7 +33,7 @@ class DownloadExcelVentasAllJob implements ShouldQueue
     public function handle(): void
     {
         try {
-            Excel::store(new VentasExport, 'reportesExcelVentas/' . $this->filename, 'public');
+            Excel::store(new VentasExport($this->user_id), 'reportesExcelVentas/' . $this->filename, 'public');
 
             $user = User::findOrfail($this->user_id);
             Notification::send($user, new ExcelVentasDescargado());

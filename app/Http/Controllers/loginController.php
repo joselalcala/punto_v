@@ -25,14 +25,17 @@ class loginController extends Controller
     public function login(loginRequest $request): RedirectResponse
     {
 
-        //Validar credenciales
-        if (!Auth::validate($request->only('email', 'password'))) {
-            return redirect()->to('login')->withErrors('Credenciales incorrectas');
+        $credentials = $request->only('email', 'password');
+
+        if (!Auth::attempt($credentials)) {
+            return redirect()
+                ->route('login.index')
+                ->withErrors('Credenciales incorrectas')
+                ->onlyInput('email');
         }
 
-        //Crear una sesión
-        $user = Auth::getProvider()->retrieveByCredentials($request->only('email', 'password'));
-        Auth::login($user);
+        $request->session()->regenerate();
+        $user = $request->user();
 
         return redirect()->route('panel')->with('login', 'Bienvenido ' . $user->name);
     }

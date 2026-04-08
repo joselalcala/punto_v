@@ -13,12 +13,17 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class VentasExport implements FromCollection, WithMapping, WithHeadings, ShouldAutoSize, WithStyles
 {
+    public function __construct(private readonly int $userId) {}
+
     /**
      * @return \Illuminate\Support\Collection
      */
     public function collection()
     {
-        return Venta::all();
+        return Venta::with(['cliente.persona', 'user', 'comprobante'])
+            ->where('user_id', $this->userId)
+            ->latest()
+            ->get();
     }
 
     /**

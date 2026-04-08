@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\MetodoPagoEnum;
+use App\Enums\TipoMovimientoEnum;
 use App\Http\Requests\StoreMovimientoRequest;
 use App\Models\Caja;
 use App\Models\Movimiento;
@@ -44,8 +45,11 @@ class MovimientoController extends Controller
     public function store(StoreMovimientoRequest $request): RedirectResponse
     {
         try {
-            Movimiento::create($request->validated());
-            ActivityLogService::log('Creación de movimiento', 'Movimientos', $request->validated());
+            $data = $request->validated();
+            $data['tipo'] = TipoMovimientoEnum::Retiro->value;
+
+            Movimiento::create($data);
+            ActivityLogService::log('Creación de movimiento', 'Movimientos', $data);
             return redirect()->route('movimientos.index', ['caja_id' => $request->caja_id])
                 ->with('success', 'retiro registrado');
         } catch (Throwable $e) {
