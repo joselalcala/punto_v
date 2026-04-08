@@ -2,12 +2,12 @@
     <div class="container-fluid px-4">
         <div class="d-flex align-items-center justify-content-between small">
             <div class="text-muted">
-                Copyright &copy; Your Website 2022 - Laravel v.{{app()->version()}} - PHP v.{{phpversion()}}
+                Copyright &copy; Web y SEO Pro 2023 - Punto de Venta V2.0
             </div>
             <div>
-                <a href="#">Privacy Policy</a>
+                <a href="#">Politicas de Privacidad</a>
                 &middot;
-                <a href="#">Terms &amp; Conditions</a>
+                <a href="#">Terminos &amp; Condiciones</a>
             </div>
         </div>
     </div>
