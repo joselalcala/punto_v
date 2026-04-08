@@ -8,6 +8,7 @@ use App\Http\Requests\StoreMovimientoRequest;
 use App\Models\Caja;
 use App\Models\Movimiento;
 use App\Services\ActivityLogService;
+use App\Services\EmpresaService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ use Throwable;
 
 class MovimientoController extends Controller
 {
-    function __construct()
+    public function __construct(private readonly EmpresaService $empresaService)
     {
         $this->middleware('check_movimiento_caja_user', ['only' => ['index', 'create', 'store']]);
     }
@@ -25,8 +26,14 @@ class MovimientoController extends Controller
      */
     public function index(Request $request): View
     {
-        $caja = Caja::findOrfail($request->caja_id);
-        return view('movimiento.index', compact('caja'));
+        $caja = Caja::with('movimientos')->findOrfail($request->caja_id);
+        $resumen = [
+            'ventas' => round((float) $caja->movimientos->where('tipo', TipoMovimientoEnum::Venta->value)->sum('monto'), 2),
+            'retiros' => round((float) $caja->movimientos->where('tipo', TipoMovimientoEnum::Retiro->value)->sum('monto'), 2),
+            'neto' => round((float) $caja->movimientos->where('tipo', TipoMovimientoEnum::Venta->value)->sum('monto') - (float) $caja->movimientos->where('tipo', TipoMovimientoEnum::Retiro->value)->sum('monto'), 2),
+        ];
+
+        return view('movimiento.index', compact('caja', 'resumen'));
     }
 
     /**
@@ -35,7 +42,7 @@ class MovimientoController extends Controller
     public function create(Request $request): View
     {
         $caja_id = $request->get('caja_id');
-        $optionsMetodoPago = MetodoPagoEnum::cases();
+        $optionsMetodoPago = $this->empresaService->obtenerMetodosPagoHabilitados();
         return view('movimiento.create', compact('optionsMetodoPago', 'caja_id'));
     }
 

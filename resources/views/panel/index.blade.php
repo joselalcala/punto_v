@@ -3,13 +3,39 @@
 @section('title','Panel')
 
 @push('css')
-<link href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+    .panel-surface {
+        border: 0;
+        border-radius: 18px;
+        box-shadow: 0 18px 40px rgba(16, 24, 40, 0.08);
+    }
+
+    .panel-list-item + .panel-list-item {
+        border-top: 1px solid #eef2f7;
+    }
+</style>
 @endpush
 
 @section('content')
 <div class="container-fluid px-4">
-    <h1 class="mt-4">Panel</h1>
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mt-4 mb-4">
+        <div>
+            <h1 class="mb-1">Panel</h1>
+            <p class="text-muted mb-0">
+                {{ $empresa?->nombre ?? 'Tu empresa' }} · {{ now()->translatedFormat('d \\d\\e F \\d\\e Y') }}
+            </p>
+        </div>
+        <div class="text-lg-end">
+            <div class="fw-semibold">Ventas de hoy</div>
+            <div class="fs-3 fw-bold">
+                {{ $empresa?->moneda?->simbolo ?? '$' }}{{ number_format($metricas['ventas_hoy'], 2) }}
+            </div>
+            <div class="text-muted small">
+                Compras del día: {{ $empresa?->moneda?->simbolo ?? '$' }}{{ number_format($metricas['compras_hoy'], 2) }}
+            </div>
+        </div>
+    </div>
     <ol class="breadcrumb mb-4">
         <li class="breadcrumb-item active">Panel</li>
     </ol>
@@ -23,13 +49,7 @@
                             <i class="fa-solid fa-people-group"></i><span class="m-1">Clientes</span>
                         </div>
                         <div class="col-4">
-                            <?php
-
-                            use App\Models\Cliente;
-
-                            $clientes = count(Cliente::all());
-                            ?>
-                            <p class="text-center fw-bold fs-4">{{$clientes}}</p>
+                            <p class="text-center fw-bold fs-4">{{ $metricas['clientes'] }}</p>
                         </div>
                     </div>
                 </div>
@@ -49,13 +69,7 @@
                             <i class="fa-solid fa-store"></i><span class="m-1">Compras</span>
                         </div>
                         <div class="col-4">
-                            <?php
-
-                            use App\Models\Compra;
-
-                            $compras = count(Compra::all());
-                            ?>
-                            <p class="text-center fw-bold fs-4">{{$compras}}</p>
+                            <p class="text-center fw-bold fs-4">{{ $metricas['compras'] }}</p>
                         </div>
                     </div>
                 </div>
@@ -75,13 +89,7 @@
                             <i class="fa-brands fa-shopify"></i><span class="m-1">Productos</span>
                         </div>
                         <div class="col-4">
-                            <?php
-
-                            use App\Models\Producto;
-
-                            $productos = count(Producto::all());
-                            ?>
-                            <p class="text-center fw-bold fs-4">{{$productos}}</p>
+                            <p class="text-center fw-bold fs-4">{{ $metricas['productos'] }}</p>
                         </div>
                     </div>
                 </div>
@@ -101,13 +109,7 @@
                             <i class="fa-solid fa-user"></i><span class="m-1">Usuarios</span>
                         </div>
                         <div class="col-4">
-                            <?php
-
-                            use App\Models\User;
-
-                            $users = count(User::all());
-                            ?>
-                            <p class="text-center fw-bold fs-4">{{$users}}</p>
+                            <p class="text-center fw-bold fs-4">{{ $metricas['usuarios'] }}</p>
                         </div>
                     </div>
                 </div>

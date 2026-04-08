@@ -30,6 +30,63 @@
     </div>
     @endcan
 
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Operaciones</div>
+                    <div class="fs-4 fw-bold">{{ $resumenCompras['operaciones'] }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Total comprado</div>
+                    <div class="fs-4 fw-bold">{{ $empresa->moneda->simbolo }}{{ number_format($resumenCompras['total'], 2) }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Promedio por compra</div>
+                    <div class="fs-4 fw-bold">{{ $empresa->moneda->simbolo }}{{ number_format($resumenCompras['promedio'], 2) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4 border-0 shadow-sm">
+        <div class="card-body">
+            <form action="{{ route('compras.index') }}" method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label for="fecha_desde" class="form-label">Desde</label>
+                    <input type="date" id="fecha_desde" name="fecha_desde" value="{{ request('fecha_desde') }}" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_hasta" class="form-label">Hasta</label>
+                    <input type="date" id="fecha_hasta" name="fecha_hasta" value="{{ request('fecha_hasta') }}" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <label for="metodo_pago" class="form-label">Método de pago</label>
+                    <select name="metodo_pago" id="metodo_pago" class="form-select">
+                        <option value="">Todos</option>
+                        @foreach ($optionsMetodoPago as $metodo)
+                        <option value="{{ $metodo->value }}" @selected(request('metodo_pago') === $metodo->value)>
+                            {{ $metodo->label() }}
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                    <a href="{{ route('compras.index') }}" class="btn btn-outline-secondary w-100">Limpiar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card mb-4">
         <div class="card-header">
             <i class="fas fa-table me-1"></i>
@@ -74,7 +131,10 @@
                             {{$item->user->name}}
                         </td>
                         <td>
-                            {{$item->total}}
+                            <span class="fw-semibold">{{ $empresa->moneda->simbolo }}{{ number_format((float) $item->total, 2) }}</span>
+                            <div>
+                                <span class="badge text-bg-light">{{ $item->metodo_pago->value }}</span>
+                            </div>
                         </td>
                         <td>
                             <div class="btn-group" role="group" aria-label="Basic mixed styles example">

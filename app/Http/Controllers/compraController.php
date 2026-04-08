@@ -37,14 +37,34 @@ class compraController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $compras = Compra::with('comprobante', 'proveedore.persona')
+        $query = Compra::with('comprobante', 'proveedore.persona')
             ->where('user_id', Auth::id())
-            ->latest()
-            ->get();
+            ->latest('fecha_hora');
 
-        return view('compra.index', compact('compras'));
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_hora', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_hora', '<=', $request->fecha_hasta);
+        }
+
+        if ($request->filled('metodo_pago')) {
+            $query->where('metodo_pago', $request->metodo_pago);
+        }
+
+        $compras = $query->get();
+        $empresa = $this->empresaService->obtenerEmpresa();
+        $resumenCompras = [
+            'operaciones' => $compras->count(),
+            'total' => round((float) $compras->sum('total'), 2),
+            'promedio' => round((float) $compras->avg('total'), 2),
+        ];
+        $optionsMetodoPago = $this->empresaService->obtenerMetodosPagoHabilitados();
+
+        return view('compra.index', compact('compras', 'empresa', 'resumenCompras', 'optionsMetodoPago'));
     }
 
     /**

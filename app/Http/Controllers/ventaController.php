@@ -37,14 +37,34 @@ class ventaController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        $ventas = Venta::with(['comprobante', 'cliente.persona', 'user'])
+        $query = Venta::with(['comprobante', 'cliente.persona', 'user'])
             ->where('user_id', Auth::id())
-            ->latest()
-            ->get();
+            ->latest('fecha_hora');
 
-        return view('venta.index', compact('ventas'));
+        if ($request->filled('fecha_desde')) {
+            $query->whereDate('fecha_hora', '>=', $request->fecha_desde);
+        }
+
+        if ($request->filled('fecha_hasta')) {
+            $query->whereDate('fecha_hora', '<=', $request->fecha_hasta);
+        }
+
+        if ($request->filled('metodo_pago')) {
+            $query->where('metodo_pago', $request->metodo_pago);
+        }
+
+        $ventas = $query->get();
+        $empresa = $this->empresaService->obtenerEmpresa();
+        $resumenVentas = [
+            'operaciones' => $ventas->count(),
+            'total' => round((float) $ventas->sum('total'), 2),
+            'promedio' => round((float) $ventas->avg('total'), 2),
+        ];
+        $optionsMetodoPago = $this->empresaService->obtenerMetodosPagoHabilitados();
+
+        return view('venta.index', compact('ventas', 'empresa', 'resumenVentas', 'optionsMetodoPago'));
     }
 
     /**

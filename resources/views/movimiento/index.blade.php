@@ -34,10 +34,35 @@
             @endif
             <h6 class="card-subtitle mb-2 text-body-secondary">
                 Saldo inicial: {{$caja->saldo_inicial}}</h6>
-            @if ($caja->saldo_final)
-            <h6 class="card-subtitle mb-2 text-body-secondary">
-                Saldo final: {{$caja->saldo_final}}</h6>
-            @endif
+        @if ($caja->saldo_final)
+        <h6 class="card-subtitle mb-2 text-body-secondary">
+            Saldo final: {{$caja->saldo_final}}</h6>
+        @endif
+        @if ($caja->ubicacione)
+        <h6 class="card-subtitle mb-2 text-body-secondary">
+            Ubicación: {{$caja->ubicacione->nombre}}</h6>
+        @endif
+
+        <div class="row g-3 mt-1 mb-3">
+            <div class="col-md-4">
+                <div class="border rounded p-3 bg-light h-100">
+                    <div class="text-muted small">Ventas registradas</div>
+                    <div class="fs-5 fw-bold">{{$resumen['ventas']}}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 bg-light h-100">
+                    <div class="text-muted small">Retiros registrados</div>
+                    <div class="fs-5 fw-bold">{{$resumen['retiros']}}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="border rounded p-3 bg-light h-100">
+                    <div class="text-muted small">Balance neto</div>
+                    <div class="fs-5 fw-bold">{{$resumen['neto']}}</div>
+                </div>
+            </div>
+        </div>
 
             <hr>
             @if ($caja->estado == 1)
@@ -91,10 +116,10 @@
                             {{$item->descripcion}}
                         </td>
                         <td>
-                            {{$item->monto}}
+                            <span class="fw-semibold">{{$item->monto}}</span>
                         </td>
                         <td>
-                            {{$item->metodo_pago->value}}
+                            <span class="badge text-bg-light">{{$item->metodo_pago->value}}</span>
                         </td>
                     </tr>
                     @endforeach
