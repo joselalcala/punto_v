@@ -2,19 +2,9 @@
 
 namespace App\Providers;
 
-use App\Events\CreateCompraDetalleEvent;
-use App\Events\CreateVentaDetalleEvent;
-use App\Events\CreateVentaEvent;
-use App\Listeners\CreateMovimientoVentaCajaListener;
-use App\Listeners\CreateRegistroCompraCardexListener;
-use App\Listeners\CreateRegistroVentaCardexListener;
-use App\Listeners\EnviarEmailClienteVentaListener;
-use App\Listeners\UpdateInventarioCompraListener;
-use App\Listeners\UpdateInventarioVentaListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -27,18 +17,6 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
-        CreateCompraDetalleEvent::class => [
-            CreateRegistroCompraCardexListener::class,
-            UpdateInventarioCompraListener::class
-        ],
-        CreateVentaDetalleEvent::class => [
-            CreateRegistroVentaCardexListener::class,
-            UpdateInventarioVentaListener::class
-        ],
-        CreateVentaEvent::class => [
-            CreateMovimientoVentaCajaListener::class,
-            EnviarEmailClienteVentaListener::class
-        ]
     ];
 
     /**
@@ -46,17 +24,7 @@ class EventServiceProvider extends ServiceProvider
      *
      * @return void
      */
-    public function boot()
-    {
-        //
-    }
-
-    /**
-     * Determine if events and listeners should be automatically discovered.
-     *
-     * @return bool
-     */
-    public function shouldDiscoverEvents()
+    public function shouldDiscoverEvents(): bool
     {
         return false;
     }

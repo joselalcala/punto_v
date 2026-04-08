@@ -2,10 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Caja;
 use App\Models\Caracteristica;
 use App\Models\Categoria;
-use App\Models\Cliente;
+use App\Models\Compra;
 use App\Models\Comprobante;
 use App\Models\Documento;
 use App\Models\Empresa;
@@ -16,9 +15,9 @@ use App\Models\Moneda;
 use App\Models\Persona;
 use App\Models\Presentacione;
 use App\Models\Producto;
+use App\Models\Proveedore;
 use App\Models\Ubicacione;
 use App\Models\User;
-use App\Models\Venta;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Permission;
@@ -26,13 +25,12 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 use Tests\TestCase;
 
-class VentaControllerTest extends TestCase
+class CompraControllerTest extends TestCase
 {
     use RefreshDatabase;
 
     protected User $user;
-    protected Caja $caja;
-    protected Cliente $cliente;
+    protected Proveedore $proveedor;
     protected Comprobante $comprobante;
     protected Producto $producto;
 
@@ -43,15 +41,15 @@ class VentaControllerTest extends TestCase
         Cache::flush();
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        Permission::firstOrCreate(['name' => 'crear-venta', 'guard_name' => 'web']);
+        Permission::firstOrCreate(['name' => 'crear-compra', 'guard_name' => 'web']);
 
         $role = Role::create([
-            'name' => 'tester-venta',
+            'name' => 'tester-compra',
             'guard_name' => 'web',
         ]);
         $role->syncPermissions(
             Permission::query()
-                ->where('name', 'crear-venta')
+                ->where('name', 'crear-compra')
                 ->get()
         );
 
@@ -75,97 +73,71 @@ class VentaControllerTest extends TestCase
             'moneda_id' => 1,
         ]);
 
-        Documento::insert(['nombre' => 'DNI']);
-        Comprobante::insert(['nombre' => 'Boleta']);
+        Documento::insert(['nombre' => 'RFC']);
+        Comprobante::insert(['nombre' => 'Factura']);
 
         $documento = Documento::firstOrFail();
         $this->comprobante = Comprobante::firstOrFail();
 
         $persona = Persona::create([
-            'razon_social' => 'Cliente Demo',
+            'razon_social' => 'Proveedor Demo',
             'direccion' => 'Direccion demo',
             'telefono' => '5555555555',
-            'tipo' => 'NATURAL',
-            'email' => 'cliente@example.com',
+            'tipo' => 'JURIDICA',
+            'email' => 'proveedor@example.com',
             'estado' => 1,
             'documento_id' => $documento->id,
-            'numero_documento' => 'ABC123',
+            'numero_documento' => 'RFC123456',
         ]);
 
-        $this->cliente = Cliente::create(['persona_id' => $persona->id]);
-        $this->caja = Caja::create(['saldo_inicial' => 100]);
+        $this->proveedor = Proveedore::create(['persona_id' => $persona->id]);
         $this->producto = $this->createProductoConInventario(5, 10);
     }
 
-    public function test_store_recalculates_sale_totals_and_uses_the_server_price(): void
+    public function test_store_recalculates_purchase_totals_and_updates_inventory_and_kardex(): void
     {
-        $response = $this->post(route('ventas.store'), [
-            'cliente_id' => $this->cliente->id,
+        $response = $this->post(route('compras.store'), [
+            'proveedore_id' => $this->proveedor->id,
             'comprobante_id' => $this->comprobante->id,
+            'numero_comprobante' => 'FAC-001',
             'metodo_pago' => 'EFECTIVO',
-            'arrayidproducto' => [$this->producto->id],
-            'arraycantidad' => [2],
-            'arrayprecioventa' => [1],
+            'fecha_hora' => '2026-04-08T10:30',
             'subtotal' => 1,
-            'impuesto' => 0,
+            'impuesto' => 3.20,
             'total' => 1,
-            'monto_recibido' => 30,
-            'vuelto_entregado' => 0,
-        ]);
-
-        $venta = Venta::first();
-        $precioServidor = round((float) $this->producto->precio, 2);
-        $subtotalEsperado = round($precioServidor * 2, 2);
-        $porcentajeImpuesto = (float) Empresa::firstOrFail()->porcentaje_impuesto;
-        $impuestoEsperado = round($subtotalEsperado * ($porcentajeImpuesto / 100), 2);
-        $totalEsperado = round($subtotalEsperado + $impuestoEsperado, 2);
-        $vueltoEsperado = round(30.00 - $totalEsperado, 2);
-
-        $response->assertRedirect(route('movimientos.index', ['caja_id' => $this->caja->id]));
-        $this->assertNotNull($venta);
-        $this->assertEquals($subtotalEsperado, (float) $venta->subtotal);
-        $this->assertEquals($impuestoEsperado, (float) $venta->impuesto);
-        $this->assertEquals($totalEsperado, (float) $venta->total);
-        $this->assertEquals($vueltoEsperado, (float) $venta->vuelto_entregado);
-        $this->assertDatabaseHas('producto_venta', [
-            'venta_id' => $venta->id,
-            'producto_id' => $this->producto->id,
-            'cantidad' => 2,
-            'precio_venta' => $precioServidor,
-        ]);
-        $this->assertDatabaseHas('inventario', [
-            'producto_id' => $this->producto->id,
-            'cantidad' => 3,
-        ]);
-        $this->assertDatabaseHas('movimientos', [
-            'caja_id' => $this->caja->id,
-            'tipo' => 'VENTA',
-        ]);
-    }
-
-    public function test_store_rejects_sales_with_insufficient_stock(): void
-    {
-        $response = $this->from(route('ventas.create'))->post(route('ventas.store'), [
-            'cliente_id' => $this->cliente->id,
-            'comprobante_id' => $this->comprobante->id,
-            'metodo_pago' => 'EFECTIVO',
             'arrayidproducto' => [$this->producto->id],
-            'arraycantidad' => [6],
-            'arrayprecioventa' => [12],
-            'subtotal' => 72,
-            'impuesto' => 11.52,
-            'total' => 83.52,
-            'monto_recibido' => 90,
-            'vuelto_entregado' => 6.48,
+            'arraycantidad' => [4],
+            'arraypreciocompra' => [8],
+            'arrayfechavencimiento' => [null],
         ]);
 
-        $response->assertRedirect(route('ventas.create'));
-        $response->assertSessionHasErrors('arraycantidad');
-        $this->assertDatabaseCount('ventas', 0);
-        $this->assertDatabaseCount('movimientos', 0);
+        $compra = Compra::first();
+
+        $response->assertRedirect(route('compras.index'));
+        $this->assertNotNull($compra);
+        $this->assertEquals(32.00, (float) $compra->subtotal);
+        $this->assertEquals(3.20, (float) $compra->impuesto);
+        $this->assertEquals(35.20, (float) $compra->total);
+        $this->assertDatabaseHas('compra_producto', [
+            'compra_id' => $compra->id,
+            'producto_id' => $this->producto->id,
+            'cantidad' => 4,
+            'precio_compra' => 8,
+        ]);
         $this->assertDatabaseHas('inventario', [
             'producto_id' => $this->producto->id,
-            'cantidad' => 5,
+            'cantidad' => 9,
+        ]);
+        $this->assertDatabaseHas('kardex', [
+            'producto_id' => $this->producto->id,
+            'tipo_transaccion' => 'COMPRA',
+            'saldo' => 9,
+            'costo_unitario' => 8,
+        ]);
+        $this->assertDatabaseHas('productos', [
+            'id' => $this->producto->id,
+            'precio' => 9.6,
+            'estado' => 1,
         ]);
     }
 
@@ -185,9 +157,9 @@ class VentaControllerTest extends TestCase
         ]);
 
         $producto = Producto::create([
-            'codigo' => 'P0001',
-            'nombre' => 'Producto Demo',
-            'descripcion' => 'Producto para pruebas',
+            'codigo' => 'P0002',
+            'nombre' => 'Producto Compra Demo',
+            'descripcion' => 'Producto para pruebas de compra',
             'estado' => 1,
             'precio' => $costoUnitario,
             'marca_id' => $marca->id,

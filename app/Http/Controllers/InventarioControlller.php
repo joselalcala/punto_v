@@ -2,13 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\TipoTransaccionEnum;
 use App\Http\Requests\StoreInventarioRequest;
 use App\Models\Inventario;
-use App\Models\Kardex;
 use App\Models\Producto;
 use App\Models\Ubicacione;
 use App\Services\ActivityLogService;
+use App\Services\InventoryTransactionService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,7 +17,7 @@ use Throwable;
 
 class InventarioControlller extends Controller
 {
-    function __construct()
+    public function __construct(private readonly InventoryTransactionService $inventoryTransactionService)
     {
         $this->middleware('check_producto_inicializado', ['only' => ['create', 'store']]);
     }
@@ -44,12 +43,11 @@ class InventarioControlller extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreInventarioRequest $request, Kardex $kardex): RedirectResponse
+    public function store(StoreInventarioRequest $request): RedirectResponse
     {
         DB::beginTransaction();
         try {
-            $kardex->crearRegistro($request->validated(), TipoTransaccionEnum::Apertura);
-            Inventario::create($request->validated());
+            $this->inventoryTransactionService->initializeProduct($request->validated());
             DB::commit();
             ActivityLogService::log('Inicialiación de producto', 'Productos', $request->validated());
             return redirect()->route('productos.index')->with('success', 'Producto inicializado');

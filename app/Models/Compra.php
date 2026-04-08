@@ -3,16 +3,13 @@
 namespace App\Models;
 
 use App\Enums\MetodoPagoEnum;
-use App\Observers\CompraObserver;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Http\UploadedFile;
 
-#[ObservedBy(CompraObserver::class)]
 class Compra extends Model
 {
     use HasFactory;

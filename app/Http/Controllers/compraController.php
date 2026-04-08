@@ -3,29 +3,28 @@
 namespace App\Http\Controllers;
 
 use App\Enums\MetodoPagoEnum;
-use App\Events\CreateCompraDetalleEvent;
 use App\Http\Requests\StoreCompraRequest;
 use App\Models\Compra;
-use App\Models\Comprobante;
-use App\Models\Empresa;
 use App\Models\Producto;
 use App\Models\Proveedore;
 use App\Services\ActivityLogService;
 use App\Services\ComprobanteService;
 use App\Services\EmpresaService;
+use App\Services\PurchaseService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class compraController extends Controller
 {
     protected EmpresaService $empresaService;
+    protected PurchaseService $purchaseService;
 
-    function __construct(EmpresaService $empresaService)
+    function __construct(EmpresaService $empresaService, PurchaseService $purchaseService)
     {
         $this->middleware('permission:ver-compra|crear-compra|mostrar-compra|eliminar-compra', ['only' => ['index']]);
         $this->middleware('permission:crear-compra', ['only' => ['create', 'store']]);
@@ -33,6 +32,7 @@ class compraController extends Controller
         //$this->middleware('permission:eliminar-compra', ['only' => ['destroy']]);
         $this->middleware('check-show-compra-user', ['only' => ['show']]);
         $this->empresaService = $empresaService;
+        $this->purchaseService = $purchaseService;
     }
 
     /**
@@ -75,54 +75,24 @@ class compraController extends Controller
      */
     public function store(StoreCompraRequest $request): RedirectResponse
     {
-        DB::beginTransaction();
         try {
+            $compra = $this->purchaseService->create(
+                $request->user(),
+                $request->validated(),
+                $request->file('file_comprobante')
+            );
 
-            //Llenar tabla compras
-            $compra = new Compra();
-            $request->merge([
-                'comprobante_path' => isset($request->file_comprobante)
-                    ? $compra->handleUploadFile($request->file_comprobante)
-                    : null
+            ActivityLogService::log('Creación de compra', 'Compras', [
+                'compra_id' => $compra->id,
+                'proveedore_id' => $compra->proveedore_id,
+                'subtotal' => $compra->subtotal,
+                'impuesto' => $compra->impuesto,
+                'total' => $compra->total,
             ]);
-            $compra = Compra::create($request->all());
-
-            //Llenar tabla compra_producto
-            //1.Recuperar los arrays
-            $arrayProducto_id = $request->get('arrayidproducto');
-            $arrayCantidad = $request->get('arraycantidad');
-            $arrayPrecioCompra = $request->get('arraypreciocompra');
-            $arrayFechaVencimiento = $request->get('arrayfechavencimiento');
-            //2.Realizar el llenado
-
-            $siseArray = count($arrayProducto_id);
-            $cont = 0;
-            while ($cont < $siseArray) {
-                $compra->productos()->syncWithoutDetaching([
-                    $arrayProducto_id[$cont] => [
-                        'cantidad' => $arrayCantidad[$cont],
-                        'precio_compra' => $arrayPrecioCompra[$cont],
-                        'fecha_vencimiento' => $arrayFechaVencimiento[$cont]
-                    ]
-                ]);
-
-                //3.Despachar evento de Creacion de registro
-                CreateCompraDetalleEvent::dispatch(
-                    $compra,
-                    $arrayProducto_id[$cont],
-                    $arrayCantidad[$cont],
-                    $arrayPrecioCompra[$cont],
-                    $arrayFechaVencimiento[$cont]
-                );
-
-                $cont++;
-            }
-
-            DB::commit();
-            ActivityLogService::log('Creación de compra', 'Compras', $request->all());
             return redirect()->route('compras.index')->with('success', 'compra exitosa');
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (Throwable $e) {
-            DB::rollBack();
             Log::error('Error al crear la compra', ['error' => $e->getMessage()]);
             return redirect()->route('compras.index')->with('error', 'Ups, algo falló');
         }

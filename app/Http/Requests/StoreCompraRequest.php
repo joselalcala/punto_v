@@ -32,7 +32,15 @@ class StoreCompraRequest extends FormRequest
             'fecha_hora' => 'required|date|date_format:Y-m-d\TH:i',
             'subtotal' => 'required|min:1',
             'impuesto' => 'required|min:0',
-            'total' => 'required|min:1'
+            'total' => 'required|min:1',
+            'arrayidproducto' => 'required|array|min:1',
+            'arrayidproducto.*' => 'required|integer|distinct|exists:productos,id',
+            'arraycantidad' => 'required|array|min:1',
+            'arraycantidad.*' => 'required|integer|min:1',
+            'arraypreciocompra' => 'required|array|min:1',
+            'arraypreciocompra.*' => 'required|numeric|min:0.01',
+            'arrayfechavencimiento' => 'required|array|min:1',
+            'arrayfechavencimiento.*' => 'nullable|date',
         ];
     }
 }
