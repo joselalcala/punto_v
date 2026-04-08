@@ -3,7 +3,10 @@
 namespace App\Exceptions;
 
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Throwable;
 
@@ -49,10 +52,26 @@ class Handler extends ExceptionHandler
             //
         });
 
+        $this->renderable(function (AuthorizationException $e, Request $request) {
+            return response()->view('errors.401', [], 401);
+        });
+
         $this->renderable(function (NotFoundHttpException $e, Request $request) {
             return response()->view('errors.404', [], 404);
+        });
 
-            return response()->view('errors.401', [], 401);
+        $this->renderable(function (Throwable $e, Request $request) {
+            if (
+                $e instanceof AuthorizationException ||
+                $e instanceof NotFoundHttpException ||
+                $e instanceof ValidationException
+            ) {
+                return null;
+            }
+
+            if ($e instanceof HttpExceptionInterface && $e->getStatusCode() < 500) {
+                return null;
+            }
 
             return response()->view('errors.500', [], 500);
         });

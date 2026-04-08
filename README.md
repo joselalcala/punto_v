@@ -1,10 +1,10 @@
 # Punto de Venta Base
 
-Base Laravel para evolucionar un sistema de punto de venta propio. Incluye modulos de ventas, compras, caja, inventario, catalogos, roles, exportacion a Excel y comprobantes PDF.
+Base Laravel para evolucionar un sistema de punto de venta propio. Incluye ventas, compras, caja, inventario, kardex, catalogos, configuracion de empresa, dashboard operativo, exportacion a Excel y comprobantes PDF.
 
 ## Estado actual
 
-Esta base ya es util para demo y desarrollo local, pero aun requiere refactor en reglas de negocio criticas como venta, caja e inventario antes de usarse como producto final.
+La base ya es funcional para demo, desarrollo local y presentación académica. Durante los sprints se reforzaron ventas, compras, caja, inventario, configuración operativa y vistas de seguimiento.
 
 ## Requisitos
 
@@ -89,25 +89,35 @@ Estas credenciales se cargan desde `database/seeders/UserSeeder.php`.
 - Usuarios, roles y perfil
 - Configuracion de empresa
 - Exportacion Excel y PDF
+- Dashboard con métricas operativas
+- Filtros por fecha y método de pago en compras y ventas
 
-## Sprint 1 completado en esta base
+## Calidad actual
 
-- Identidad neutral del proyecto
-- README actualizado
-- Seeder demo mas generico
-- Configuracion de zona horaria por entorno
-- Carpeta `tests/Unit` creada para evitar fallo inicial de PHPUnit
-- Backlog tecnico inicial para Sprint 2 en `docs/SPRINT_2_BACKLOG.md`
+- `php artisan test` pasa con cobertura feature para login, ventas, compras, caja, dashboard, empresa, movimientos y categorías
+- Los flujos críticos de venta y compra ya corren desde servicios transaccionales
+- El sistema permite configurar comprobantes, métodos de pago, alertas de stock y ubicación de caja
+
+## Resumen de sprints completados
+
+- Sprint 1: limpieza de base, identidad y entorno
+- Sprint 2: validación y seguridad de ventas/movimientos/exportaciones
+- Sprint 3: servicios transaccionales de venta, compra e inventario
+- Sprint 4: configuración general, comprobantes y caja por ubicación
+- Sprint 5: dashboard y reportes operativos
+- Sprint 6: cierre de calidad, pruebas y documentación
 
 ## Riesgos conocidos
 
-- La venta aun confia demasiado en datos enviados por frontend.
-- Caja, inventario y reportes necesitan refactor funcional.
-- La cobertura de pruebas sigue siendo baja.
+- Falta ampliar cobertura de pruebas para más escenarios de autorización fina y errores de integración
+- El frontend comercial aún puede modernizarse más adelante para mejorar velocidad de captura
+- Para entornos reales faltaría endurecer correo, backups y despliegue productivo
 
-## Siguiente paso sugerido
+## Documentación útil
 
-Ejecutar el Sprint 2 para reforzar validacion, permisos y seguridad transaccional.
+- Backlog inicial: `docs/SPRINT_2_BACKLOG.md`
+- Checklist de entrega: `docs/ENTREGA_CHECKLIST.md`
+- Manual rápido de uso: `docs/MANUAL_USO.md`
 
 ## Licencia
 

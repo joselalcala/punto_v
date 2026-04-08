@@ -70,7 +70,7 @@ class EmpresaController extends Controller
             $data['modo_impuesto_incluido'] = $request->boolean('modo_impuesto_incluido');
             $empresa->update($data);
             $empresaService->limpiarCacheEmpresa();
-            ActivityLogService::log('Edición de empresa', 'Empresa', $request->validated());
+            ActivityLogService::log('Edición de empresa', 'Empresa', $data);
             return redirect()->route('empresa.index')->with('success', 'Empresa editada');
         } catch (Throwable $e) {
             Log::error('Error al editar la empresa', ['error' => $e->getMessage()]);
