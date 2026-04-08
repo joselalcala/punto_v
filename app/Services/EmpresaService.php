@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\MetodoPagoEnum;
 use App\Models\Empresa;
 use Illuminate\Support\Facades\Cache;
 
@@ -23,5 +24,25 @@ class EmpresaService
     public function limpiarCacheEmpresa(): void
     {
         Cache::forget('empresa');
+    }
+
+    /**
+     * Obtener solo los metodos de pago habilitados en la configuracion.
+     *
+     * @return array<int, MetodoPagoEnum>
+     */
+    public function obtenerMetodosPagoHabilitados(): array
+    {
+        $empresa = $this->obtenerEmpresa();
+        $metodosConfigurados = $empresa->metodos_pago_configurados;
+
+        if ($metodosConfigurados === []) {
+            return MetodoPagoEnum::cases();
+        }
+
+        return array_values(array_filter(
+            MetodoPagoEnum::cases(),
+            fn (MetodoPagoEnum $metodo): bool => in_array($metodo->value, $metodosConfigurados, true)
+        ));
     }
 }

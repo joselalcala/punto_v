@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCajaRequest;
 use App\Models\Caja;
-use App\Rules\CajaCerradaRule;
+use App\Models\Ubicacione;
 use App\Services\ActivityLogService;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -31,19 +32,18 @@ class CajaController extends Controller
      */
     public function create(): View
     {
-        return view('caja.create');
+        $ubicaciones = Ubicacione::query()->orderBy('nombre')->get();
+
+        return view('caja.create', compact('ubicaciones'));
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreCajaRequest $request): RedirectResponse
     {
-        $request->validate([
-            'saldo_inicial' => ['required', 'numeric', 'min:1', new CajaCerradaRule]
-        ]);
         try {
-            $caja = Caja::create($request->all());
+            $caja = Caja::create($request->validated());
             ActivityLogService::log('Creación de caja', 'Cajas', ['caja' => $caja]);
             return redirect()->route('movimientos.index', ['caja_id' => $caja->id])->with('success', 'Caja aperturada');
         } catch (Throwable $e) {

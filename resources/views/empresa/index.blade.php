@@ -57,6 +57,25 @@
                 <x-forms.input id="ubicacion" :defaultValue='$empresa->ubicacion' />
             </div>
 
+            <div class="col-md-6">
+                <x-forms.input id="stock_minimo_alerta"
+                    :defaultValue='$empresa->stock_minimo_alerta ?? 5'
+                    type='number'
+                    labelText='Alerta de stock mínimo' />
+            </div>
+
+            <div class="col-md-6 d-flex align-items-end">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" value="1"
+                        id="modo_impuesto_incluido"
+                        name="modo_impuesto_incluido"
+                        @checked(old('modo_impuesto_incluido', $empresa->modo_impuesto_incluido))>
+                    <label class="form-check-label" for="modo_impuesto_incluido">
+                        Los precios capturados ya incluyen impuesto
+                    </label>
+                </div>
+            </div>
+
             <div class="col-12">
                 <label for="moneda_id" class="form-label">Moneda seleccionada:</label>
                 <select name="moneda_id" id="moneda_id" class="form-select">
@@ -69,6 +88,35 @@
                 </select>
                 @error('moneda_id')
                 <small class="text-danger">{{'* .$messsage'}}</small>
+                @enderror
+            </div>
+
+            <div class="col-12">
+                <label class="form-label d-block">Métodos de pago habilitados:</label>
+                <div class="row g-2">
+                    @php
+                    $metodosSeleccionados = old('metodos_pago_habilitados', $empresa->metodos_pago_configurados ?: collect($metodosPago)->map(fn ($metodo) => $metodo->value)->all());
+                    @endphp
+                    @foreach ($metodosPago as $metodo)
+                    <div class="col-md-3 col-sm-6">
+                        <div class="form-check border rounded p-3 h-100">
+                            <input class="form-check-input" type="checkbox"
+                                name="metodos_pago_habilitados[]"
+                                id="metodo_{{ strtolower($metodo->value) }}"
+                                value="{{ $metodo->value }}"
+                                @checked(in_array($metodo->value, $metodosSeleccionados, true))>
+                            <label class="form-check-label ms-2" for="metodo_{{ strtolower($metodo->value) }}">
+                                {{ $metodo->label() }}
+                            </label>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+                @error('metodos_pago_habilitados')
+                <small class="text-danger">{{ '*'.$message }}</small>
+                @enderror
+                @error('metodos_pago_habilitados.*')
+                <small class="text-danger d-block">{{ '*'.$message }}</small>
                 @enderror
             </div>
 

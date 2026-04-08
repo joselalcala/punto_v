@@ -76,7 +76,14 @@ class VentaControllerTest extends TestCase
         ]);
 
         Documento::insert(['nombre' => 'DNI']);
-        Comprobante::insert(['nombre' => 'Boleta']);
+        Comprobante::insert([
+            'nombre' => 'Boleta',
+            'codigo' => 'BOLETA',
+            'prefijo' => 'BOL',
+            'descripcion' => 'Comprobante de prueba',
+            'longitud_numero' => 5,
+            'activo' => true,
+        ]);
 
         $documento = Documento::firstOrFail();
         $this->comprobante = Comprobante::firstOrFail();
@@ -123,6 +130,7 @@ class VentaControllerTest extends TestCase
 
         $response->assertRedirect(route('movimientos.index', ['caja_id' => $this->caja->id]));
         $this->assertNotNull($venta);
+        $this->assertEquals('BOL001 - 00001', $venta->numero_comprobante);
         $this->assertEquals($subtotalEsperado, (float) $venta->subtotal);
         $this->assertEquals($impuestoEsperado, (float) $venta->impuesto);
         $this->assertEquals($totalEsperado, (float) $venta->total);

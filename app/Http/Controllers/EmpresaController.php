@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MetodoPagoEnum;
 use App\Http\Requests\UpdateEmpresaRequest;
 use App\Models\Empresa;
 use App\Models\Moneda;
@@ -22,7 +23,9 @@ class EmpresaController extends Controller
     {
         $empresa = Empresa::first();
         $monedas = Moneda::all();
-        return view('empresa.index', compact('empresa', 'monedas'));
+        $metodosPago = MetodoPagoEnum::cases();
+
+        return view('empresa.index', compact('empresa', 'monedas', 'metodosPago'));
     }
 
     /**
@@ -63,7 +66,9 @@ class EmpresaController extends Controller
     public function update(UpdateEmpresaRequest $request, Empresa $empresa, EmpresaService $empresaService): RedirectResponse
     {
         try {
-            $empresa->update($request->validated());
+            $data = $request->validated();
+            $data['modo_impuesto_incluido'] = $request->boolean('modo_impuesto_incluido');
+            $empresa->update($data);
             $empresaService->limpiarCacheEmpresa();
             ActivityLogService::log('Edición de empresa', 'Empresa', $request->validated());
             return redirect()->route('empresa.index')->with('success', 'Empresa editada');

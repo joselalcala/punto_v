@@ -56,7 +56,9 @@
                                 class="form-control selectpicker"
                                 title="Selecciona">
                                 @foreach ($comprobantes as $item)
-                                <option value="{{$item->id}}">{{$item->nombre}}</option>
+                                <option value="{{$item->id}}">
+                                    {{ $item->nombre }}{{ $item->prefijo ? ' - '.$item->prefijo : '' }}
+                                </option>
                                 @endforeach
                             </select>
                             @error('comprobante_id')
@@ -73,7 +75,7 @@
                                 class="form-control selectpicker"
                                 title="Selecciona">
                                 @foreach ($optionsMetodoPago as $item)
-                                <option value="{{$item->value}}">{{$item->name}}</option>
+                                <option value="{{$item->value}}">{{$item->label()}}</option>
                                 @endforeach
                             </select>
                             @error('metodo_pago')

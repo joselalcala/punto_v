@@ -35,6 +35,17 @@ class SaleService
             }
 
             $empresa = Empresa::query()->firstOrFail();
+
+            if (
+                is_array($empresa->metodos_pago_configurados) &&
+                $empresa->metodos_pago_configurados !== [] &&
+                !in_array($validated['metodo_pago'], $empresa->metodos_pago_configurados, true)
+            ) {
+                throw ValidationException::withMessages([
+                    'metodo_pago' => 'El método de pago no está habilitado en la configuración actual.',
+                ]);
+            }
+
             $arrayProducto_id = $validated['arrayidproducto'];
             $arrayCantidad = $validated['arraycantidad'];
 
@@ -101,14 +112,20 @@ class SaleService
                 ]);
             }
 
-            $tipoComprobante = Comprobante::query()->findOrFail($validated['comprobante_id'])->nombre;
+            $comprobante = Comprobante::query()->findOrFail($validated['comprobante_id']);
+
+            if (!$comprobante->activo) {
+                throw ValidationException::withMessages([
+                    'comprobante_id' => 'El comprobante seleccionado no está disponible.',
+                ]);
+            }
 
             $venta = Venta::create([
                 'cliente_id' => $validated['cliente_id'],
                 'user_id' => $user->id,
                 'caja_id' => $caja->id,
                 'comprobante_id' => $validated['comprobante_id'],
-                'numero_comprobante' => $this->generateSaleNumber($caja->id, $tipoComprobante),
+                'numero_comprobante' => $this->generateSaleNumber($caja->id, $comprobante),
                 'metodo_pago' => $validated['metodo_pago'],
                 'fecha_hora' => Carbon::now()->toDateTimeString(),
                 'subtotal' => $subtotal,
@@ -147,20 +164,22 @@ class SaleService
         });
     }
 
-    private function generateSaleNumber(int $cajaId, string $tipoComprobante): string
+    private function generateSaleNumber(int $cajaId, Comprobante $comprobante): string
     {
-        $prefijo = strtoupper(substr($tipoComprobante, 0, 1));
+        $prefijo = $comprobante->prefijo ?: strtoupper(substr($comprobante->nombre, 0, 1));
+        $longitudNumero = max((int) ($comprobante->longitud_numero ?: 7), 1);
 
         $ultimaVenta = Venta::query()
             ->where('caja_id', $cajaId)
+            ->where('comprobante_id', $comprobante->id)
             ->lockForUpdate()
             ->latest('id')
             ->first();
 
         $ultimoNumero = $ultimaVenta
-            ? (int) substr($ultimaVenta->numero_comprobante, 7)
+            ? (int) trim((string) preg_replace('/^.*-\s*/', '', $ultimaVenta->numero_comprobante))
             : 0;
 
-        return sprintf('%s%03d - %07d', $prefijo, $cajaId, $ultimoNumero + 1);
+        return sprintf('%s%03d - %0' . $longitudNumero . 'd', $prefijo, $cajaId, $ultimoNumero + 1);
     }
 }

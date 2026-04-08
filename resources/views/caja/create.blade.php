@@ -20,6 +20,21 @@
         <div class="row g-4">
 
             <div class="col-12">
+                <label for="ubicacione_id" class="form-label">Ubicación</label>
+                <select name="ubicacione_id" id="ubicacione_id" class="form-select">
+                    <option value="">Sin ubicación específica</option>
+                    @foreach ($ubicaciones as $ubicacion)
+                    <option value="{{ $ubicacion->id }}" @selected(old('ubicacione_id') == $ubicacion->id)>
+                        {{ $ubicacion->nombre }}
+                    </option>
+                    @endforeach
+                </select>
+                @error('ubicacione_id')
+                <small class="text-danger">{{ '*'.$message }}</small>
+                @enderror
+            </div>
+
+            <div class="col-12">
                 <x-forms.input id="saldo_inicial" required='true' type='number'
                     labelText='Saldo inicial' />
             </div>

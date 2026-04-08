@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateEmpresaRequest extends FormRequest
 {
@@ -31,7 +32,11 @@ class UpdateEmpresaRequest extends FormRequest
             'correo' => 'nullable|max:255',
             'telefono' => 'nullable|max:255',
             'ubicacion' => 'nullable|max:255',
-            'moneda_id' => 'required|integer|exists:monedas,id'
+            'moneda_id' => 'required|integer|exists:monedas,id',
+            'stock_minimo_alerta' => 'required|integer|min:0|max:999999',
+            'modo_impuesto_incluido' => 'nullable|boolean',
+            'metodos_pago_habilitados' => 'required|array|min:1',
+            'metodos_pago_habilitados.*' => ['required', 'string', Rule::in(['EFECTIVO', 'TARJETA', 'TRANSFERENCIA', 'OTRO'])],
         ];
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Comprobante;
 use App\Models\Compra;
 use App\Models\Producto;
 use App\Models\User;
@@ -16,6 +17,14 @@ class PurchaseService
     public function create(User $user, array $validated, ?UploadedFile $comprobanteFile = null): Compra
     {
         return DB::transaction(function () use ($user, $validated, $comprobanteFile) {
+            $comprobante = Comprobante::query()->findOrFail($validated['comprobante_id']);
+
+            if (!$comprobante->activo) {
+                throw ValidationException::withMessages([
+                    'comprobante_id' => 'El comprobante seleccionado no está disponible.',
+                ]);
+            }
+
             $arrayProducto_id = $validated['arrayidproducto'];
             $arrayCantidad = $validated['arraycantidad'];
             $arrayPrecioCompra = $validated['arraypreciocompra'];

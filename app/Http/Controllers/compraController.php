@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\MetodoPagoEnum;
 use App\Http\Requests\StoreCompraRequest;
 use App\Models\Compra;
 use App\Models\Producto;
@@ -58,7 +57,7 @@ class compraController extends Controller
         })->get();
         $comprobantes = $comprobanteService->obtenerComprobantes();
         $productos = Producto::where('estado', 1)->get();
-        $optionsMetodoPago = MetodoPagoEnum::cases();
+        $optionsMetodoPago = $this->empresaService->obtenerMetodosPagoHabilitados();
         $empresa = $this->empresaService->obtenerEmpresa();
 
         return view('compra.create', compact(

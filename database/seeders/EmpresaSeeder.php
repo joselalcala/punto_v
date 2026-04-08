@@ -19,6 +19,9 @@ class EmpresaSeeder extends Seeder
             'porcentaje_impuesto' => '16',
             'abreviatura_impuesto' => 'IVA',
             'direccion' => 'Calle Principal 100, Ciudad Demo',
+            'stock_minimo_alerta' => 5,
+            'modo_impuesto_incluido' => false,
+            'metodos_pago_habilitados' => json_encode(['EFECTIVO', 'TARJETA', 'TRANSFERENCIA']),
             'moneda_id' => 1,
         ]);
     }

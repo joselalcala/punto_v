@@ -19,6 +19,11 @@ class Caja extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function ubicacione(): BelongsTo
+    {
+        return $this->belongsTo(Ubicacione::class);
+    }
+
     public function movimientos(): HasMany
     {
         return $this->hasMany(Movimiento::class);

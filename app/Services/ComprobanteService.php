@@ -14,7 +14,10 @@ class ComprobanteService
     public function obtenerComprobantes(): Collection
     {
         return Cache::rememberForever('comprobantes', function () {
-            return Comprobante::all();
+            return Comprobante::query()
+                ->where('activo', true)
+                ->orderBy('nombre')
+                ->get();
         });
     }
 

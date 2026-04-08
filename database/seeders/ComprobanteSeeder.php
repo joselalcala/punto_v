@@ -15,10 +15,20 @@ class ComprobanteSeeder extends Seeder
     {
         Comprobante::insert([
             [
-                'nombre' => 'Boleta'
+                'nombre' => 'Boleta',
+                'codigo' => 'BOLETA',
+                'prefijo' => 'B',
+                'descripcion' => 'Comprobante simplificado para venta mostrador',
+                'longitud_numero' => 7,
+                'activo' => true,
             ],
             [
-                'nombre' => 'Factura'
+                'nombre' => 'Factura',
+                'codigo' => 'FACTURA',
+                'prefijo' => 'F',
+                'descripcion' => 'Comprobante fiscal para cliente con datos fiscales',
+                'longitud_numero' => 7,
+                'activo' => true,
             ]
         ]);
     }

@@ -13,4 +13,9 @@ class Ubicacione extends Model
     {
         return $this->hasMany(Inventario::class);
     }
+
+    public function cajas(): HasMany
+    {
+        return $this->hasMany(Caja::class);
+    }
 }

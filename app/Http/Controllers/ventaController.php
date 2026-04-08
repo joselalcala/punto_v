@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\MetodoPagoEnum;
 use App\Http\Requests\StoreVentaRequest;
 use App\Models\Cliente;
 use App\Models\Producto;
@@ -76,7 +75,7 @@ class ventaController extends Controller
             $query->where('estado', 1);
         })->get();
         $comprobantes = $comprobanteService->obtenerComprobantes();
-        $optionsMetodoPago = MetodoPagoEnum::cases();
+        $optionsMetodoPago = $this->empresaService->obtenerMetodosPagoHabilitados();
         $empresa = $this->empresaService->obtenerEmpresa();
 
         return view('venta.create', compact(

@@ -10,6 +10,12 @@ class Comprobante extends Model
 {
     use HasFactory;
 
+    protected $guarded = ['id'];
+
+    protected $casts = [
+        'activo' => 'boolean',
+    ];
+
     public function compras(): HasMany
     {
         return $this->hasMany(Compra::class);
